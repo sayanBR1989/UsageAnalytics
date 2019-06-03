@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?><database>
+    <element label="User Usage Configuration" max_length="40" name="x_191188_usage_ana_user_usage_configuration" type="collection">
+        <element default="true" label="Active" max_length="40" name="active" type="boolean"/>
+        <element label="Auto Create BR" max_length="40" name="auto_create_br" type="boolean"/>
+        <element label="Configuration Table" mandatory="true" max_length="80" name="configuration_table" type="table_name"/>
+        <element attributes="edge_encryption_enabled=true" choice="1" label="User Activity Type" mandatory="true" max_length="40" name="configuration_type" type="string">
+            <choice>
+                <element inactive_on_update="false" label="Viewed" sequence="0" value="viewed"/>
+                <element inactive_on_update="false" label="Updated" sequence="1" value="updated"/>
+            </choice>
+        </element>
+        <element attributes="edge_encryption_enabled=true" label="Description" max_length="1000" name="description" type="string"/>
+        <element label="Encoded Query" mandatory="true" max_length="1000" name="encoded_query" type="string"/>
+        <element attributes="edge_encryption_enabled=true" label="Event" max_length="40" name="event" type="string"/>
+        <element attributes="edge_encryption_enabled=true" label="FIeld Mapping" max_length="1000" name="field_mapping" type="string"/>
+        <element attributes="edge_encryption_enabled=true" label="Group By Field" mandatory="true" max_length="40" name="group_by_field" type="string"/>
+        <element label="Last RunTime" max_length="40" name="last_runtime" type="glide_date_time"/>
+        <element attributes="edge_encryption_enabled=true" label="Module" mandatory="true" max_length="40" name="module" type="string"/>
+        <element label="Next RunTime" max_length="40" name="next_runtime" type="glide_date_time"/>
+        <element attributes="ignore_filter_on_new=true" default="javascript:global.getNextObjNumberPadded();" label="Number" max_length="40" name="number" type="string"/>
+        <element label="Poll Interval" max_length="40" name="poll_interval" type="integer"/>
+        <element label="Script" max_length="4000" name="script" type="script"/>
+        <element attributes="edge_encryption_enabled=true" hint="Hint : Please enter the list of the Update Table Fields in a comma separated format to be watched for fulfiller updates" label="Update Field Watcher" max_length="1000" name="update_field_watcher" type="string"/>
+        <element attributes="base_start=true" label="Update Table" max_length="80" name="update_table" type="table_name"/>
+        <element label="Advanced Script" max_length="40" name="u_advanced_script" type="boolean"/>
+        <element attributes="edge_encryption_enabled=true" choice="1" label="License Type" mandatory="true" max_length="40" name="u_choice_1" type="string">
+            <choice>
+                <element inactive_on_update="false" label="Fulfiller" sequence="0" value="fulfiller"/>
+                <element inactive_on_update="false" label="ESS" sequence="1" value="ess"/>
+            </choice>
+        </element>
+    </element>
+</database>

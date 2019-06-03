@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?><database>
+    <element label="User Usage Breakdown" max_length="40" name="x_191188_usage_ana_user_usage_breakdown" type="collection">
+        <element label="Activity Count" max_length="40" name="activity_count" type="integer"/>
+        <element choice="1" choice_field="configuration_type" choice_table="x_191188_usage_ana_user_usage_configuration" label="Activity Type" max_length="40" name="activity_type" type="choice">
+            <choice>
+                <element inactive_on_update="false" label="Viewed" sequence="0" value="viewed"/>
+                <element inactive_on_update="false" label="Updated" sequence="1" value="updated"/>
+            </choice>
+        </element>
+        <element label="Last Used" max_length="40" name="last_used" type="glide_date_time"/>
+        <element choice="1" choice_field="u_choice_1" choice_table="x_191188_usage_ana_user_usage_configuration" label="License Type" max_length="40" name="license_type" type="choice">
+            <choice>
+                <element inactive_on_update="false" label="Fulfiller" sequence="0" value="fulfiller"/>
+                <element inactive_on_update="false" label="ESS" sequence="1" value="ess"/>
+            </choice>
+        </element>
+        <element label="Module" max_length="40" name="module" type="string"/>
+        <element label="Usage Summary" max_length="32" name="usage_summary" reference="x_191188_usage_ana_user_usage_summary" type="reference"/>
+        <element label="User" max_length="32" name="user" reference="sys_user" type="reference"/>
+        <index name="index">
+            <element name="usage_summary"/>
+        </index>
+        <index name="index2">
+            <element name="user"/>
+        </index>
+    </element>
+</database>

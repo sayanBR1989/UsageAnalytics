@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_security_acl">
+    <sys_security_acl action="INSERT_OR_UPDATE">
+        <active>true</active>
+        <admin_overrides>true</admin_overrides>
+        <advanced>false</advanced>
+        <condition/>
+        <description>Default access control on x_191188_usage_ana_user_usage_breakdown</description>
+        <name>x_191188_usage_ana_user_usage_breakdown</name>
+        <operation display_value="create">create</operation>
+        <script/>
+        <sys_class_name>sys_security_acl</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2019-05-31 19:23:00</sys_created_on>
+        <sys_id>443e50c5db3133009c569444ca961906</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>x_191188_usage_ana_user_usage_breakdown</sys_name>
+        <sys_package display_value="Usage Analytics" source="x_191188_usage_ana">561af61fdbad33009c569444ca9619ab</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="Usage Analytics">561af61fdbad33009c569444ca9619ab</sys_scope>
+        <sys_update_name>sys_security_acl_443e50c5db3133009c569444ca961906</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2019-05-31 19:23:00</sys_updated_on>
+        <type display_value="record">record</type>
+    </sys_security_acl>
+</record_update>

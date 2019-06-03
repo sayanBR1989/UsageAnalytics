@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_script_include">
+    <sys_script_include action="INSERT_OR_UPDATE">
+        <access>package_private</access>
+        <active>true</active>
+        <api_name>x_191188_usage_ana.SI_UserUsageBaseClass</api_name>
+        <client_callable>false</client_callable>
+        <description/>
+        <name>SI_UserUsageBaseClass</name>
+        <script><![CDATA[var SI_UserUsageBaseClass = Class.create();
+SI_UserUsageBaseClass.prototype = {
+	initialize: function() {
+		this.logsource = "UserUsageDataCollector";
+		this.processor = new SI_LogUsageProcessor();
+		this.debugmode = true;
+	},
+	
+	collectUserUsageStats: function(activityType){
+		var config = new GlideRecord("x_191188_usage_ana_user_usage_configuration");
+		config.addQuery("configuration_type",activityType);
+		config.addQuery("active",true);
+		config.query();
+		while(config.next()){
+			this.logger(">>>DEBUG ::: config name : "+config.number+" ::: For the activity type : "+ config.u_choice_1);
+			var source_table = config.configuration_table ;
+			var enc_query = config.encoded_query;
+			if(activityType == "viewed"){
+				this.fn_crawlTransactionLog(source_table,enc_query,config);
+			}
+			else if(activityType == "updated"){
+				this.fn_collectUpdatedUsageStats(source_table,enc_query,config);
+			}
+			
+			
+		}
+	},
+	
+	fn_collectUpdatedUsageStats: function(source_table,enc_query,config_rec){
+		var USERACT_OBJ = {};
+			USERACT_OBJ["activity_type"] = config_rec.configuration_type.toString();
+			USERACT_OBJ["license_type"] = config_rec.u_choice_1.toString();
+			USERACT_OBJ["module"] = config_rec.module.toString();
+
+			this.logger(">>> DEBUG :: Building the JSON Object for User Activity Updated  : "+JSON.stringify(USERACT_OBJ));
+			
+			var groupBy = config_rec.group_by_field;
+			
+			//Crawl through the Events Logs to realize the events that are triggered for respective module per user 
+		
+			var eventLogGR = new GlideAggregate(source_table);
+			eventLogGR.addEncodedQuery(enc_query);
+			eventLogGR.addAggregate('COUNT', groupBy);
+			eventLogGR.query();
+			while (eventLogGR.next()) {
+				var userID = eventLogGR.parm2;
+				var update_count = eventLogGR.getAggregate('COUNT', groupBy);
+				this.logger("DEBUG >>> There are currently " + update_count + " updates by the user " + userID+" for the module : "+config_rec.module+" >>> License Type : "+config_rec.u_choice_1);// Finding the view count for each module view per user
+				
+				USERACT_OBJ["user"] = userID.toString();
+				USERACT_OBJ["count"] = update_count;
+				
+				this.logger(">>> DEBUG :: ABOUT TO LOG THE SUMMARY FOR USAGE : "+JSON.stringify(USERACT_OBJ));
+				//view count , user id , module , licenseType, acivityType
+				new SI_LogUsageProcessor().fn_logUsageStats(USERACT_OBJ ,config_rec);
+				//Process the Usage Summary record and Usage Breakdown record
+				
+			}
+	},
+	
+	fn_crawlTransactionLog: function(source_table,enc_query,config_rec){
+		
+		//Build the JSON Object to collect the data for the config rec
+		var USERACT_OBJ = {};
+			USERACT_OBJ["activity_type"] = config_rec.configuration_type.toString();
+			USERACT_OBJ["license_type"] = config_rec.u_choice_1.toString();
+			USERACT_OBJ["module"] = config_rec.module.toString();
+			
+			this.logger(">>DEBUG :CONFIG activity_type"+config_rec.configuration_type);
+			this.logger(">>DEBUG :CONFIG  license_type"+config_rec.u_choice_1);
+			this.logger(">>DEBUG :CONFIG  module"+config_rec.module);
+			
+			this.logger(">>> DEBUG :: Buiklding the JSON Object for User Activity : "+JSON.stringify(USERACT_OBJ));
+			
+			var groupBy = config_rec.group_by_field;
+			
+			//Crawl through the User Transaction Log to find the transactions for each view in each module for each user
+			this.logger(">>>DEBUG : from the function processData ::: sourcet_table : "+source_table);
+			this.logger(">>>DEBUG : from the function processData ::: enc_query : "+enc_query);
+			var trans_count = new GlideAggregate(source_table);
+			trans_count.addEncodedQuery(enc_query);
+			trans_count.addAggregate('COUNT', groupBy);
+			trans_count.query();
+			while (trans_count.next()) {
+				var userID = trans_count[groupBy];
+				var view_count = trans_count.getAggregate('COUNT', groupBy);
+				this.logger("DEBUG >>> There are currently " + view_count + " views by the user " + userID+" for the module : "+config_rec.module+" >>> License Type : "+config_rec.u_choice_1);// Finding the view count for each module view per user
+				
+				USERACT_OBJ["user"] = this._fn_getUser(userID);
+				USERACT_OBJ["count"] = view_count;
+				
+				this.logger(">>> DEBUG :: ABOUT TO LOG THE SUMMARY FOR USAGE : "+JSON.stringify(USERACT_OBJ));
+				//view count , user id , module , licenseType, acivityType
+				new SI_LogUsageProcessor().fn_logUsageStats(USERACT_OBJ ,config_rec);
+				//Process the Usage Summary record and Usage Breakdown record
+				
+			}
+			
+		},
+		
+		logUsageActivity: function(transac_log,config_rec){
+			//var isFound = this.findUserUsageRec(transac_log,config_rec);//First check for an existing record for the particular user
+			
+			//if(!isFound){
+				//this.logger(">>>DEBUG ::: Need to create a new record since the value of isFound is : "+isFound);
+				var logUsage = new GlideRecord("x_191188_usage_ana_user_usage");
+				logUsage.newRecord();
+				logUsage.setValue("user",this._fn_getUser(transac_log.sys_created_by));
+				logUsage.setValue("view",transac_log.view_id.getDisplayValue());
+				logUsage.setValue("activity_type",config_rec.u_choice_1);
+				logUsage.setValue("view",config_rec.module);
+				logUsage.insert();
+				//}
+			},
+			
+			findUserUsageRec: function(transac_log,config_rec){
+				
+				/**********************************************************************************/
+				/*
+				- There should be only 1 record in the User Usage Table
+				- Per User
+				- Per User Activity Type
+				- Per License Type
+				- Per Days Ago [A time configured through a system property]
+				
+				- For User Activity Type :::
+				- We need to capture the breakdowns for the exact usage of the user which gives us better understanding of the activity
+				
+				
+				Mapping :
+				[Config Record] : [Usage Record]
+				- User Activity Type, License Type,
+ 				*/
+				/**********************************************************************************/
+				
+				var config_license_type = config_rec.u_choice_1;
+				//	var usage_window_delimiter = gs.getProperty("");
+				
+				var recUsage = new GlideRecord("x_191188_usage_ana_user_usage");
+				recUsage.addQuery("user",this._fn_getUser(transac_log.sys_created_by));
+				recUsage.addQuery("user_activity_type","viewed");
+				recUsage.addQuery("activity_type",config_license_type);
+				recUsage.query();
+				if(recUsage.next()){
+					this.logger(">>>DEBUG ::: The user usage record has been found for the user : "+transac_log.sys_created_by);
+					if(recUsage.activity_type == 'ess' && config_rec.u_choice_1 != 'ess'){
+						this.logger(">>>DEBUG ::: UPDATING the EXISTING USER USAGE RECORD.");
+						recUsage.setValue("activity_type",config_rec.u_choice_1);
+						recUsage.setValue("view",transac_log.view_id.getDisplayValue());
+						recUsage.setValue("view",config_rec.module);
+						recUsage.update();
+						//return true;
+					}
+				}
+				else{
+					//return false;
+					this.logUsageActivity(transac_log,config_rec);
+				}
+				
+			},
+			
+			fn_buildScriptForAutoBR: function(config){
+				var br_name = "AutoBR_"+config.module+"_UsageAnalytics";
+				var event = config.event;
+				var update_watcher = config.update_field_watcher.toString();
+				var config_module = config.module;
+				this.logger(">>>DEBUG : The update watcher field list is : "+update_watcher);
+				var table = config.update_table;
+				var script="";
+				if(config.u_advanced_script) {
+					this.logger(">>> DEBUG : The advanced script is fetched");
+					// Fetch the script from the config record
+					script = config.script;
+				}
+				else{
+					script = this._fn_fetchAutoScript(event,update_watcher,config_module);
+					}
+					var br = new GlideRecord("sys_script");
+					br.initialize();
+					br.active = true;
+					br.collection = table;
+					br.name=br_name;
+					br.advanced = true;
+					br.when = "after";
+					br.action_insert = true;
+					br.action_update = true;
+					br.script = script;
+				br.insert();
+				this.logger(">>>DEBUG : The business rule auto is created : "+br.sys_id);
+				},
+	
+			_fn_fetchAutoScript: function(event,field_watcher,conf_module){
+				var script = '(function executeRule('+'current, previous'+' /*'+'null when async*/'+'){'+'\n var event_to_trigger ="'+event+'";\n'+'\n var fieldArr = '+field_watcher+';\n'+'for(var i = 0'+';'+' i '+'< fieldArr.length'+';'+' i++'+'){\n'+'if(current'+'[fieldArr'+'[i]]'+'.changes('+')){\n'+'gs.eventQueue('+'event_to_trigger,current'+','+'"'+conf_module+'",gs.getUserID('+'))'+';\nbreak'+';\n'+'}\n}\n})('+'current'+', previous)'+';\n'+'\n//END OF Auto Generated SCRIPT';
+				
+this.logger(">>> DEBUG : The Auto Generated Script is : \n "+script+'\n');
+				return script;
+			},
+				
+				_fn_getUser: function(id){
+					var user = new GlideRecord("sys_user");
+					user.addQuery("user_name",id);
+					user.query();
+					if(user.next()){
+						this.logger(">>>DEBUG ::: The user GR is found  : "+user.name);
+						return user.sys_id;
+					}
+				},
+				
+				logger: function(msg){
+					new SI_APP_DEBUGGER().debug(msg);
+					
+				},
+				
+				
+				type: 'SI_UserUsageBaseClass'
+			};]]></script>
+        <sys_class_name>sys_script_include</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2019-05-26 22:43:40</sys_created_on>
+        <sys_id>c6e61393db2173009c569444ca9619a3</sys_id>
+        <sys_mod_count>33</sys_mod_count>
+        <sys_name>SI_UserUsageBaseClass</sys_name>
+        <sys_package display_value="Usage Analytics" source="x_191188_usage_ana">561af61fdbad33009c569444ca9619ab</sys_package>
+        <sys_policy>read</sys_policy>
+        <sys_scope display_value="Usage Analytics">561af61fdbad33009c569444ca9619ab</sys_scope>
+        <sys_update_name>sys_script_include_c6e61393db2173009c569444ca9619a3</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2019-06-03 01:56:42</sys_updated_on>
+    </sys_script_include>
+</record_update>

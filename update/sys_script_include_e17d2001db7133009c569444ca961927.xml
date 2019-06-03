@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_script_include">
+    <sys_script_include action="INSERT_OR_UPDATE">
+        <access>package_private</access>
+        <active>true</active>
+        <api_name>x_191188_usage_ana.SI_LogUsageProcessor</api_name>
+        <client_callable>false</client_callable>
+        <description/>
+        <name>SI_LogUsageProcessor</name>
+        <script><![CDATA[var SI_LogUsageProcessor = Class.create();
+SI_LogUsageProcessor.prototype = {
+    initialize: function() {
+		this.logger = new SI_APP_DEBUGGER();
+    },
+	
+	check: function(){
+		this.logger.debug(">>>DEBUG : SAYAN ::: the function check is called ");
+	},
+	
+	fn_logUsageStats: function(parsed_obj /*json object containing transaction detail*/, config_rec){
+		
+		/*
+		JSON Obj 
+		- Activity Type
+		- Module 
+		- License Type
+		- User Record Sys ID 
+		- Activity Count 
+		*/
+		
+		this.logger.debug(">>>DEBUG : SAYAN ::: Going into Processor script udpated  "+JSON.stringify(parsed_obj));
+		
+		//var parsed_obj = JSON.parse(activity_obj);
+		var tr_module = parsed_obj.module;
+		var tr_license = parsed_obj.license_type;
+		var tr_act_type = parsed_obj.activity_type;
+		var tr_user= parsed_obj.user;
+		var tr_count = parsed_obj.count;
+		
+		// First Check the Usage Summary Record >>> If not present create one record 
+		var enc_query = "user="+tr_user+"^license_type="+tr_license;
+		var usageSummaryRec = this.fn_findGRRecord(enc_query,"x_191188_usage_ana_user_usage_summary");
+		if(usageSummaryRec != -1){
+			this.fn_updateUsageSummaryRecord(usageSummaryRec/*usage summary GR */,tr_act_type,tr_count);
+		}
+		else{
+			usageSummaryRec = this.fn_createUsageSummaryRecord("x_191188_usage_ana_user_usage_summary", tr_user, tr_license,tr_act_type,tr_count);
+			this.logger.debug(">>>DEBUG :: The Summary record created SYS ID >> "+usageSummaryRec.sys_id+" :: User >> "+usageSummaryRec.user.sys_id);
+		}
+		
+		
+		// First check for the Usage Breakdown record >>> If not present create one record 
+		enc_query = "usage_summary="+usageSummaryRec.sys_id+"^activity_type="+tr_act_type+"^license_type="+tr_license+"^module="+tr_module;
+		this.logger.debug(">>>DEBUG : The encoded query to be passed to fetch the breakdown record is >>> "+enc_query);
+		var usageBreakdownRec = this.fn_findGRRecord(enc_query,"x_191188_usage_ana_user_usage_breakdown");
+		if(usageBreakdownRec != -1){
+			//update the same breakdown record 
+			this.fn_updateBreakdownRecord(usageBreakdownRec/*Breakdown record GR */,tr_count/*Activity Count */);
+		}
+		else{
+			//Create a Breakdown record 
+			this.fn_createBreakdownRecord("x_191188_usage_ana_user_usage_breakdown"/*Breakdown record table */,usageSummaryRec /*summary record GR */,tr_act_type,tr_license,tr_module, tr_count);
+		}
+		
+	},
+	
+	fn_createBreakdownRecord: function(breakdownTable,usageSummaryRec,activity_type,license_type,tr_module,count){
+		this.logger.debug(">>>DEBUG :: To Create breakdown record. Summary details >>> SYS ID >> "+usageSummaryRec.sys_id+" :: User >> "+usageSummaryRec.user.sys_id);
+		
+		var br_rec = new GlideRecord(breakdownTable);
+		br_rec.newRecord();
+		br_rec.setValue("usage_summary",usageSummaryRec.sys_id);
+		br_rec.setValue("user",usageSummaryRec.user.sys_id);
+		br_rec.setValue("activity_type",activity_type);
+		br_rec.setValue("license_type",license_type);
+		br_rec.setValue("module",tr_module);
+		br_rec.setValue("activity_count",count);
+		br_rec.insert();
+		
+		
+	},
+	
+	fn_updateBreakdownRecord: function(usage_breakdownGR,usage_count){
+		this.logger.debug(">>> DEBUG : Updating the Usage Breakdown record with the field : "+usage_breakdownGR.activity_count+" ::: The count to be updated is : "+parseInt(usage_count));
+		usage_breakdownGR.activity_count = 	parseInt(usage_breakdownGR.activity_count) + parseInt(usage_count);
+		usage_breakdownGR.update();
+	},
+	
+	fn_updateUsageSummaryRecord: function(usage_summary_gr , activity_type, count){
+		var counter_to_update = (activity_type == "viewed") ? "viewed_count" : "updated_count";
+		//updating only the Counter for the User and the License Type Usage Summary record 
+		this.logger.debug(">>> DEBUG : Updating the Usage Summary record with the field : "+usage_summary_gr[counter_to_update]+" ::: The count to be updated is : "+parseInt(count));
+		usage_summary_gr[counter_to_update] = parseInt(usage_summary_gr[counter_to_update]) + parseInt(count);
+		usage_summary_gr.update();
+	},
+	
+	fn_createUsageSummaryRecord: function(table,user,license, activity_type, count){
+		var counter_to_update = (activity_type == "viewed") ? "viewed_count" : "updated_count";
+		var usageSum = new GlideRecord(table);
+		usageSum.newRecord();
+		usageSum.setValue("user",user);
+		usageSum.setValue("license_type",license);
+		usageSum.setValue(counter_to_update,count);
+		usageSum.insert();
+		this.logger.debug(">>>DEBUG ::: A new Usage Summary Record is created : "+usageSum.sys_id);
+		return usageSum;
+		
+	},
+	
+	fn_findGRRecord: function(encoded_query, table_to_query){
+		var gr = new GlideRecord(table_to_query);
+		gr.addEncodedQuery(encoded_query);
+		gr.query();
+		if(gr.next()){
+			return gr;
+		}
+		else{
+			return -1;
+		}
+	},
+
+    type: 'SI_LogUsageProcessor'
+};]]></script>
+        <sys_class_name>sys_script_include</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2019-05-31 21:50:37</sys_created_on>
+        <sys_id>e17d2001db7133009c569444ca961927</sys_id>
+        <sys_mod_count>23</sys_mod_count>
+        <sys_name>SI_LogUsageProcessor</sys_name>
+        <sys_package display_value="Usage Analytics" source="x_191188_usage_ana">561af61fdbad33009c569444ca9619ab</sys_package>
+        <sys_policy>read</sys_policy>
+        <sys_scope display_value="Usage Analytics">561af61fdbad33009c569444ca9619ab</sys_scope>
+        <sys_update_name>sys_script_include_e17d2001db7133009c569444ca961927</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2019-06-02 22:53:16</sys_updated_on>
+    </sys_script_include>
+</record_update>

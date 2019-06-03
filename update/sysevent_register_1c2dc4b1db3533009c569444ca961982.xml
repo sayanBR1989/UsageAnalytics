@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sysevent_register">
+    <sysevent_register action="INSERT_OR_UPDATE">
+        <description>Used to track if the user has approved the change interactively or from the platform GUI </description>
+        <event_name>x_191188_usage_ana.change.gui.approve</event_name>
+        <fired_by/>
+        <queue>usage_analytics</queue>
+        <suffix>change.gui.approve</suffix>
+        <sys_class_name>sysevent_register</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2019-06-03 02:04:50</sys_created_on>
+        <sys_id>1c2dc4b1db3533009c569444ca961982</sys_id>
+        <sys_mod_count>1</sys_mod_count>
+        <sys_name>x_191188_usage_ana.change.gui.approve</sys_name>
+        <sys_package display_value="Usage Analytics" source="x_191188_usage_ana">561af61fdbad33009c569444ca9619ab</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="Usage Analytics">561af61fdbad33009c569444ca9619ab</sys_scope>
+        <sys_update_name>sysevent_register_1c2dc4b1db3533009c569444ca961982</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2019-06-03 02:06:08</sys_updated_on>
+        <table/>
+    </sysevent_register>
+</record_update>

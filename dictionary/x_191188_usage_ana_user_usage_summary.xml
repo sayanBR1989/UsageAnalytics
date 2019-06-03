@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?><database>
+    <element label="User Usage Summary" max_length="40" name="x_191188_usage_ana_user_usage_summary" type="collection">
+        <element label="Last Used" max_length="40" name="last_used" type="glide_date_time"/>
+        <element choice="1" choice_field="u_choice_1" choice_table="x_191188_usage_ana_user_usage_configuration" label="License Type" max_length="40" name="license_type" type="choice">
+            <choice/>
+        </element>
+        <element attributes="ignore_filter_on_new=true" default="javascript:global.getNextObjNumberPadded();" label="Number" max_length="40" name="number" type="string"/>
+        <element default="javascript:current.getTableName();" label="Class" max_length="80" name="sys_class_name" type="sys_class_name"/>
+        <element label="Updated Count" max_length="40" name="updated_count" type="integer"/>
+        <element label="User" max_length="32" name="user" reference="sys_user" type="reference"/>
+        <element label="Viewed Count" max_length="40" name="viewed_count" type="integer"/>
+        <index name="index">
+            <element name="user"/>
+        </index>
+        <index name="index2">
+            <element name="sys_class_name"/>
+        </index>
+    </element>
+</database>
